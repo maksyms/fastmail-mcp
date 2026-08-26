@@ -928,6 +928,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'string',
               description: 'Event location (optional)',
             },
+            transparency: {
+              type: 'string',
+              enum: ['OPAQUE', 'TRANSPARENT'],
+              description: 'Busy-time transparency (TRANSP, optional). OPAQUE blocks free/busy time, TRANSPARENT does not. Omitted means server default (OPAQUE).',
+            },
             participants: {
               type: 'array',
               items: {
@@ -2076,7 +2081,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'create_calendar_event': {
-        const { calendarId, title, description, start, end, location, participants } = args as any;
+        const { calendarId, title, description, start, end, location, transparency, participants } = args as any;
         if (!calendarId || !title || !start || !end) {
           throw new McpError(ErrorCode.InvalidParams, 'calendarId, title, start, and end are required');
         }
@@ -2085,7 +2090,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new McpError(ErrorCode.InvalidRequest, 'CalDAV not configured. Set FASTMAIL_CALDAV_USERNAME and FASTMAIL_CALDAV_PASSWORD.');
         }
         const eventId = await davClient.createCalendarEvent({
-          calendarId, title, description, start, end, location, participants,
+          calendarId, title, description, start, end, location, transparency, participants,
         });
         return { content: [{ type: 'text', text: `Calendar event created. Event ID: ${eventId}` }] };
       }

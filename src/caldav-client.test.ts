@@ -1964,6 +1964,29 @@ describe('CalDAVCalendarClient.createCalendarEvent with participants', () => {
     const ical = mockDAVClient.createCalendarObject.mock.calls[0].arguments[0].iCalString;
     assert.ok(ical.endsWith('\r\n'));
   });
+
+  it('emits TRANSP only when requested, and rejects invalid values', async () => {
+    const base = {
+      calendarId: 'Personal',
+      title: 'Test',
+      start: '2026-04-07T14:00:00Z',
+      end: '2026-04-07T15:00:00Z',
+    };
+
+    const noTransp = createMockedCreateClient();
+    await noTransp.client.createCalendarEvent(base);
+    assert.ok(!noTransp.mockDAVClient.createCalendarObject.mock.calls[0].arguments[0].iCalString.includes('TRANSP'));
+
+    const transparent = createMockedCreateClient();
+    await transparent.client.createCalendarEvent({ ...base, transparency: 'TRANSPARENT' });
+    assert.ok(transparent.mockDAVClient.createCalendarObject.mock.calls[0].arguments[0].iCalString.includes('TRANSP:TRANSPARENT\r\n'));
+
+    const bad = createMockedCreateClient();
+    await assert.rejects(
+      () => bad.client.createCalendarEvent({ ...base, transparency: 'TRANSPARENT\r\nSUMMARY:injected' as any }),
+      /Invalid transparency/
+    );
+  });
 });
 
 describe('CRLF vs LF line ending preservation', () => {

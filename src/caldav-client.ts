@@ -1126,6 +1126,7 @@ export class CalDAVCalendarClient {
     start: string;
     end: string;
     location?: string;
+    transparency?: 'OPAQUE' | 'TRANSPARENT';
     participants?: Array<{ email: string; name?: string }>;
   }): Promise<string> {
     const client = await this.getClient();
@@ -1174,6 +1175,15 @@ export class CalDAVCalendarClient {
     }
     if (event.location) {
       icalLines.push(foldICalLine(`LOCATION:${escapeICalText(event.location)}`));
+    }
+    // TRANSP (RFC 5545 §3.8.2.7) — whitelist the two legal values so nothing
+    // caller-supplied can be injected into the iCal body.
+    if (event.transparency) {
+      const transp = event.transparency.toUpperCase();
+      if (transp !== 'OPAQUE' && transp !== 'TRANSPARENT') {
+        throw new Error(`Invalid transparency: ${event.transparency}. Expected OPAQUE or TRANSPARENT`);
+      }
+      icalLines.push(`TRANSP:${transp}`);
     }
 
     // Participant support
